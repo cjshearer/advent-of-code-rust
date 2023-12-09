@@ -13,9 +13,9 @@ fn part2(input: &str) -> u32 {
     for window in lines.windows(3) {
         let current_line = window[1];
         for (gear_i, _) in current_line.match_indices('*') {
-            let neighbor_range_lower = max(gear_i, 1) - 1;
-            let neighbor_range_upper = min(gear_i + 1, current_line.len() - 1);
-            let adjacent_part_numbers = window
+            let lower_adjacent_range = max(gear_i, 1) - 1;
+            let upper_adjacent_range = min(gear_i + 1, current_line.len() - 1);
+            let adjacent_digits = window
                 .iter()
                 .flat_map(|&line| {
                     let mut adjacent_digits = vec![];
@@ -23,42 +23,37 @@ fn part2(input: &str) -> u32 {
                         return adjacent_digits;
                     }
                     adjacent_digits.extend(
-                        line[neighbor_range_lower..=neighbor_range_upper]
+                        line[lower_adjacent_range..=upper_adjacent_range]
                             .match_indices(|c: char| c.is_digit(10))
-                            .map(|(offset, _)| (offset + neighbor_range_lower, line)),
+                            .map(|(offset, _)| (offset + lower_adjacent_range, line)),
                     );
                     match adjacent_digits.len() {
                         3 => adjacent_digits.truncate(1),
-                        2 => {
-                            adjacent_digits.dedup_by(|(a, _), (b, _)| usize::abs_diff(*a, *b) == 1)
-                        }
+                        2 => adjacent_digits.dedup_by(|(a, _), (b, _)| a.abs_diff(*b) == 1),
                         _ => {}
                     };
                     return adjacent_digits;
                 })
                 .collect::<Vec<_>>();
-            if adjacent_part_numbers.len() != 2 {
+            if adjacent_digits.len() != 2 {
                 continue;
             }
-            gear_ratio_sum +=
-                adjacent_part_numbers
-                    .iter()
-                    .fold(1, |acc, (part_number_middle, line)| {
-                        let start = line[..*part_number_middle]
-                            .rfind(|c: char| !c.is_digit(10))
-                            .map(|i| i + 1)
-                            .unwrap_or(0);
-                        let end = line[*part_number_middle..]
-                            .find(|c: char| !c.is_digit(10))
-                            .map(|i| i + part_number_middle)
-                            .unwrap_or(line.len());
-                        let part_number = line[start..end]
-                            .to_string()
-                            .parse::<u32>()
-                            .ok()
-                            .expect("should be a number");
-                        return acc * part_number;
-                    });
+            gear_ratio_sum += adjacent_digits.iter().fold(1, |acc, (middle, line)| {
+                let start = line[..*middle]
+                    .rfind(|c: char| !c.is_digit(10))
+                    .map(|i| i + 1)
+                    .unwrap_or(0);
+                let end = line[*middle..]
+                    .find(|c: char| !c.is_digit(10))
+                    .map(|i| i + middle)
+                    .unwrap_or(line.len());
+                let part_number = line[start..end]
+                    .to_string()
+                    .parse::<u32>()
+                    .ok()
+                    .expect("should be a number");
+                return acc * part_number;
+            });
         }
     }
     return gear_ratio_sum;
